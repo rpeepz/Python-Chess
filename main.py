@@ -10,6 +10,7 @@ class Game:
 		pygame.display.set_caption(NAME)
 		self.clock = pygame.time.Clock()
 		self.screen = pygame.display.set_mode((WIDTH, HEIGHT), pygame.SRCALPHA)
+		self.screen.fill(BG_COLOR)
 		self.menu_screen = self.screen.subsurface((WIDTH / 2) - (MENU_WIDTH / 2) + OFFSET, (HEIGHT/ 2) - (MENU_HEIGHT / 2) + (OFFSET * 4), MENU_WIDTH, MENU_HEIGHT)
 		self.piece_path = import_pieces()
 		self.paused = False
@@ -54,13 +55,13 @@ class Game:
 		# draw cell names
 		self.font = pygame.font.SysFont(FONT, FONT_SIZE)
 		for x in range(8):
-			self.screen.blit(self.font.render(f'{chr(x + 65)}', True, FONT_COLOR, 'Black'), (self.checker[x].x + 18, self.checker[x].y - 15))
+			self.screen.blit(self.font.render(f'{chr(x + 65)}', True, FONT_COLOR, BG_COLOR), (self.checker[x].x + 18, self.checker[x].y - 15))
 		for x in range(56, 64):
-			self.screen.blit(self.font.render(f'{chr(x + 9)}', True, FONT_COLOR, 'Black'), (self.checker[x].x + 18, self.checker[x].y + 45))
+			self.screen.blit(self.font.render(f'{chr(x + 9)}', True, FONT_COLOR, BG_COLOR), (self.checker[x].x + 18, self.checker[x].y + 45))
 		for x in range(0, 64, 8):
-			self.screen.blit(self.font.render(f'{(64 - x) // 8}', True, FONT_COLOR, 'Black'), (self.checker[x].x - 12, self.checker[x].y + 12))
+			self.screen.blit(self.font.render(f'{(64 - x) // 8}', True, FONT_COLOR, BG_COLOR), (self.checker[x].x - 12, self.checker[x].y + 12))
 		for x in range(7, 64, 8):
-			self.screen.blit(self.font.render(f'{((64 - x) // 8) + 1}', True, FONT_COLOR, 'Black'), (self.checker[x].x + 50, self.checker[x].y + 12))
+			self.screen.blit(self.font.render(f'{((64 - x) // 8) + 1}', True, FONT_COLOR, BG_COLOR), (self.checker[x].x + 50, self.checker[x].y + 12))
 
 	def add_piece(self, piece, x, y_off):
 		'''helper function for draw_piece'''
@@ -110,16 +111,19 @@ class Game:
 	def	draw_captured_section(self):
 		white_capture_surf = pygame.Surface((TILESIZE, TILESIZE))
 		black_capture_surf = pygame.Surface((TILESIZE, TILESIZE))
-		white_capture_surf.fill(CAPTURED_W)
-		black_capture_surf.fill(CAPTURED_B)
+		if self.settings['Captures'] is ENABLED:
+			white_capture_surf.fill(CAPTURED_W)
+			black_capture_surf.fill(CAPTURED_B)
+		else:
+			white_capture_surf.fill(BG_COLOR)
+			black_capture_surf.fill(BG_COLOR)
 		for y in range(1, 3):
 			for x in range(8):
 				w_location = (48 + ((WIDTH / 10) * x), 183 - ((WIDTH / 10) * (3 - y)) - (OFFSET * 5))
 				b_location = (48 + ((WIDTH / 10) * x), 183 + ((WIDTH / 10) * (7 + y)) + (OFFSET * 5))
 				
-				if self.settings['Captures'] is ENABLED:
-					self.screen.blit(white_capture_surf, w_location)
-					self.screen.blit(black_capture_surf, b_location)
+				self.screen.blit(white_capture_surf, w_location)
+				self.screen.blit(black_capture_surf, b_location)
 
 				w_cap = pygame.Rect(w_location[0], w_location[1], TILESIZE, TILESIZE)
 				b_cap = pygame.Rect(b_location[0], b_location[1], TILESIZE, TILESIZE)
@@ -128,32 +132,36 @@ class Game:
 				self.captured_section[1].append(b_cap)
 
 	def draw_score_helper(self, score, score_pos):
-		s = self.font.render(f'{score}', True, FONT_COLOR, 'Black')
-		s_pos = s.get_rect()
-		s_pos.topleft = score_pos.topright
-		s_pos.x = 93
-		self.screen.blit(s, s_pos)
+		if self.settings['Score'] is ENABLED:
+			s = self.font.render(f'{score}', True, FONT_COLOR, BG_COLOR)
+			s_pos = s.get_rect()
+			s_pos.topleft = score_pos.topright
+			s_pos.x = 93
+			self.screen.blit(s, s_pos)
 
 	def draw_score(self, update, color):
+		self.font = pygame.font.SysFont(FONT, FONT_SIZE)
 		if self.settings['Score'] is ENABLED:
-			self.font = pygame.font.SysFont(FONT, FONT_SIZE)
-			s = self.font.render('SCORE :        ', True, FONT_COLOR, 'Black')
-			score_pos = s.get_rect()
-			score_pos.bottomleft = (self.captured_section[0][0].topleft)
-			score_pos.y -= OFFSET
-			if color != 'black':
-				if update is True:
-					score_pos.x = 48
-					self.draw_score_helper(self.black_score, score_pos)
-				else:
-					self.screen.blit(s, score_pos)
-			score_pos.topleft = (self.captured_section[1][8].bottomleft)
-			score_pos.y += OFFSET
-			if color != 'white':
-				if update is True:
-					self.draw_score_helper(self.white_score, score_pos)
-				else:
-					self.screen.blit(s, score_pos)
+			t = 'SCORE :        '
+		else:
+			t = '               '
+		s = self.font.render(t, True, FONT_COLOR, BG_COLOR)
+		score_pos = s.get_rect()
+		score_pos.bottomleft = (self.captured_section[0][0].topleft)
+		score_pos.y -= OFFSET
+		if color != 'black':
+			if update is True:
+				score_pos.x = 48
+				self.draw_score_helper(self.black_score, score_pos)
+			else:
+				self.screen.blit(s, score_pos)
+		score_pos.topleft = (self.captured_section[1][8].bottomleft)
+		score_pos.y += OFFSET
+		if color != 'white':
+			if update is True:
+				self.draw_score_helper(self.white_score, score_pos)
+			else:
+				self.screen.blit(s, score_pos)
 
 	def init_menu(self, menu):
 		'''initialize variables for the menus'''
@@ -168,7 +176,7 @@ class Game:
 			b = pygame.Rect(MENU_WIDTH * .1, (i * (MENU_HEIGHT / (n + 1))) + (TILESIZE / 2), MENU_WIDTH * .8, TILESIZE)
 			button.append(b)
 		for i, text in enumerate(texts):
-			text = self.font.render(text, True, 'Black')
+			text = self.font.render(text, True, MENU_TEXT)
 			pos = text.get_rect()
 			pos.center = button[i].center
 			if menu == 'Pause':
@@ -184,7 +192,7 @@ class Game:
 		pygame.display.update()
 	
 	def unpause(self):
-		self.menu_screen.fill((0,0,0,0))
+		self.menu_screen.fill(BG_COLOR)
 		for i, t in enumerate(self.tile['rect']):
 			pygame.draw.rect(self.screen, self.tile['color'][i], t)
 		self.piece_sprites.draw(self.screen)
@@ -459,7 +467,7 @@ class Game:
 		for piece in self.piece_path:
 			if color in piece and not 'King' in piece and not 'Pawn' in piece:
 				# TODO make options for pawn conversions
-				path = './Piece/' + color + 'Queen' + '.png'
+				path = f'./Piece/{color}Queen.png'
 		return Piece(path)
 
 	def move_piece(self, selection, tile_selected):
@@ -573,11 +581,11 @@ class Game:
 		self.font = pygame.font.SysFont(FONT, FONT_SIZE*4)
 		color = self.check_turn()
 		if color == 'white':
-			c = self.font.render('WHITE TURN', True, FONT_COLOR, 'Black')
+			c = self.font.render('WHITE TURN', True, FONT_COLOR, BG_COLOR)
 		else:
-			c = self.font.render('BLACK TURN', True, FONT_COLOR, 'Black')
+			c = self.font.render('BLACK TURN', True, FONT_COLOR, BG_COLOR)
 		if self.checkmate(color):
-			c = self.font.render('GAME  OVER', True, FONT_COLOR, 'Black')
+			c = self.font.render('GAME  OVER', True, FONT_COLOR, BG_COLOR)
 		c_r = c.get_rect()
 		c_r.center = (self.checker[3].right, self.captured_section[0][3].top)
 		c_r.bottom = self.captured_section[0][3].top - (OFFSET * 5)
